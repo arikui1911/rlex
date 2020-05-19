@@ -17,7 +17,8 @@ class RLex
     @fib = Fiber.new(&method(:lex))
     @context = Context.new
     @initial = self.class.instance_variable_get(:@initial_state)
-    @sublexers = self.class.instance_variable_get(:@sublexers)
+    @sublexer_classes = self.class.instance_variable_get(:@sublexers)
+    @sublexers = Hash.new{|h, k| h[k] = @sublexer_classes.fetch(k).new }
   end
 
   def read
@@ -33,7 +34,7 @@ class RLex
     @src.each_line do |line|
       rest = line
       until rest.empty?
-        rest = @sublexers.fetch(@context.state).lex(rest)
+        rest = @sublexers[@context.state].lex(@context, rest)
         @context.column = line.size - rest.size + 1
       end
       @context.lineno += 1
